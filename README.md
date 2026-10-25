@@ -19,19 +19,19 @@
 <table>
   <tr>
     <td width="33%" valign="top">
-      <a href="https://github.com/sjdsjadjajdjsa/prism"><img src="https://raw.githubusercontent.com/sjdsjadjajdjsa/prism/main/docs/splash.png" alt="Prism start screen"></a>
+      <a href="https://github.com/sjdsjadjajdjsa/prism"><img src="assets/card-prism.png" width="100%" alt="Prism start screen"></a>
       <h3><a href="https://github.com/sjdsjadjajdjsa/prism">Prism</a></h3>
       Free AI coding assistant for your terminal and browser. Runs on free models or the plan you already pay for.
       <br><sub>Go · Docker</sub>
     </td>
     <td width="33%" valign="top">
-      <a href="https://github.com/sjdsjadjajdjsa/hanami"><img src="https://raw.githubusercontent.com/sjdsjadjajdjsa/hanami/main/docs/screenshot-dark.webp" alt="Hanami launcher with falling sakura petals"></a>
+      <a href="https://github.com/sjdsjadjajdjsa/hanami"><img src="assets/card-hanami.jpg" width="100%" alt="Hanami launcher with falling sakura petals"></a>
       <h3><a href="https://github.com/sjdsjadjajdjsa/hanami">Hanami</a></h3>
       A small game launcher for Linux and Windows, with falling sakura petals.
       <br><sub>Rust · Slint</sub>
     </td>
     <td width="33%" valign="top">
-      <a href="https://github.com/sjdsjadjajdjsa/afterglow-viz"><img src="https://raw.githubusercontent.com/sjdsjadjajdjsa/afterglow-viz/main/docs/demo-color.gif" alt="afterglow-viz with album colors"></a>
+      <a href="https://github.com/sjdsjadjajdjsa/afterglow-viz"><img src="assets/card-afterglow.gif" width="100%" alt="afterglow-viz with album colors"></a>
       <h3><a href="https://github.com/sjdsjadjajdjsa/afterglow-viz">afterglow-viz</a></h3>
       Audio-reactive visualizer and ambient backdrop for Spotify.
       <br><sub>TypeScript · Spicetify</sub>
