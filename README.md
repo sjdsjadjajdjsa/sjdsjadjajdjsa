@@ -19,7 +19,7 @@
 <table>
   <tr>
     <td width="33%" valign="top">
-      <a href="https://github.com/sjdsjadjajdjsa/prism"><img src="assets/card-prism.png" width="100%" alt="Prism start screen"></a>
+      <a href="https://github.com/sjdsjadjajdjsa/prism"><img src="assets/card-prism.gif" width="100%" alt="Prism start screen"></a>
       <h3><a href="https://github.com/sjdsjadjajdjsa/prism">Prism</a></h3>
       Free AI coding assistant for your terminal and browser. Runs on free models or the plan you already pay for.
       <br><sub>Go · Docker</sub>
