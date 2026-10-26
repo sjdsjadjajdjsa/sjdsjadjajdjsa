@@ -25,7 +25,7 @@
       <br><sub>Go · Docker</sub>
     </td>
     <td width="33%" valign="top">
-      <a href="https://github.com/sjdsjadjajdjsa/hanami"><img src="assets/card-hanami.jpg" width="100%" alt="Hanami launcher with falling sakura petals"></a>
+      <a href="https://github.com/sjdsjadjajdjsa/hanami"><img src="assets/card-hanami.webp" width="100%" alt="Hanami launcher with falling sakura petals"></a>
       <h3><a href="https://github.com/sjdsjadjajdjsa/hanami">Hanami</a></h3>
       A small game launcher for Linux and Windows, with falling sakura petals.
       <br><sub>Rust · Slint</sub>
