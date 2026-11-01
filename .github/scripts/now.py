@@ -1,25 +1,23 @@
+import base64
 import json
 import os
 import sys
 import urllib.request
 from datetime import datetime, timezone
-from html import escape
 from pathlib import Path
 
+from kit import ASSETS, THEMES, star, svg, text, width, wrap
+
 USER = os.environ.get("PROFILE_USER", "sjdsjadjajdjsa")
-TOKEN = os.environ.get("GITHUB_TOKEN") or os.environ.get("GH_TOKEN", "")
-SPECTRUM = ["#ff5f6d", "#ffa25f", "#f9e27d", "#7ee2a8", "#6fd3ff", "#c69bff"]
-MONO = "ui-monospace,SFMono-Regular,Menlo,Consolas,monospace"
-THEMES = {
-    "dark": dict(bg="#0e0d14", bar="#15131f", line="#2a2740", ink="#f2f0ff", sub="#8f8ca8", ok="#7ee2a8", rest="#3a3750", spec=SPECTRUM),
-    "light": dict(bg="#fbfaff", bar="#f1eef9", line="#e3dff0", ink="#16141f", sub="#6b6882", ok="#1f9d63", rest="#cfcadf", spec=["#e5354a", "#e0761f", "#b58900", "#1f9d63", "#0a8fd1", "#8b5cf6"]),
-}
-W = 1200
-CH = 0.6
+TOKEN = os.environ.get("GITHUB_TOKEN", "")
+FEATURED = ["prism", "hanami", "afterglow-viz"]
+MORE = ["tonal", "rhythia-is-trash", "pg3d-rewrite", "ttyfy-theme"]
+LANG = {"Rust": "#dea584", "Go": "#00add8", "TypeScript": "#3178c6", "JavaScript": "#f1e05a", "Python": "#3572a5", "QML": "#44a51c", "Shell": "#89e051"}
+API = "https://api.github.com"
 
 
-def call(url, body=None):
-    req = urllib.request.Request(url, data=json.dumps(body).encode() if body else None)
+def call(path, body=None):
+    req = urllib.request.Request(API + path, data=json.dumps(body).encode() if body else None)
     req.add_header("Accept", "application/vnd.github+json")
     if TOKEN:
         req.add_header("Authorization", f"Bearer {TOKEN}")
@@ -27,164 +25,206 @@ def call(url, body=None):
         return json.load(r)
 
 
+def contributions():
+    q = f'query{{user(login:"{USER}"){{contributionsCollection{{contributionCalendar{{totalContributions}}}}}}}}'
+    try:
+        return call("/graphql", {"query": q})["data"]["user"]["contributionsCollection"]["contributionCalendar"]["totalContributions"]
+    except Exception:
+        return None
+
+
+def project(name):
+    r = call(f"/repos/{USER}/{name}")
+    return dict(name=r["name"], desc=r["description"] or "", lang=r["language"] or "", stars=r["stargazers_count"])
+
+
 def gather():
-    api = "https://api.github.com"
-    user = call(f"{api}/users/{USER}")
-    repos = [
-        r for r in call(f"{api}/users/{USER}/repos?per_page=100&type=owner&sort=pushed")
-        if not r["fork"] and not r["archived"] and r["name"] != USER
-    ]
+    user = call(f"/users/{USER}")
+    repos = [r for r in call(f"/users/{USER}/repos?per_page=100&type=owner&sort=pushed") if not r["fork"] and not r["archived"] and r["name"] != USER]
     langs = {}
     for r in repos:
-        for k, v in call(r["languages_url"]).items():
+        for k, v in call(r["languages_url"][len(API):]).items():
             langs[k] = langs.get(k, 0) + v
     log = []
     for r in repos[:3]:
-        c = call(f"{api}/repos/{r['full_name']}/commits?per_page=1")[0]["commit"]
+        c = call(f"/repos/{r['full_name']}/commits?per_page=1")[0]["commit"]
         log.append((r["name"], c["committer"]["date"], c["message"].splitlines()[0]))
-    try:
-        q = f'query{{user(login:"{USER}"){{contributionsCollection{{contributionCalendar{{totalContributions}}}}}}}}'
-        total = call(f"{api}/graphql", {"query": q})["data"]["user"]["contributionsCollection"]["contributionCalendar"]["totalContributions"]
-    except Exception:
-        total = None
     return dict(
-        stars=sum(r["stargazers_count"] for r in repos),
-        repos=len(repos),
-        followers=user["followers"],
-        contributions=total,
+        stats=[("stars", sum(r["stargazers_count"] for r in repos)), ("projects", len(repos)), ("contributions", contributions()), ("followers", user["followers"])],
         langs=sorted(langs.items(), key=lambda x: -x[1]),
         log=log,
-        projects=[(r["name"], r["description"] or "", r["language"] or "", r["stargazers_count"]) for r in repos],
     )
 
 
-def text(x, y, s, fill, size=22, weight=400):
-    return f'<text x="{x}" y="{y}" font-family="{MONO}" font-size="{size}" font-weight="{weight}" fill="{fill}" xml:space="preserve">{escape(s)}</text>'
+def preview(name):
+    f = ASSETS / "previews" / f"{name}.jpg"
+    return "data:image/jpeg;base64," + base64.b64encode(f.read_bytes()).decode() if f.exists() else None
 
 
-def width(s, size=22):
-    return len(s) * size * CH
+def frame(t, w, h):
+    return f'<rect x=".5" y=".5" width="{w - 1}" height="{h - 1}" rx="14" fill="{t["fill"]}" stroke="{t["line"]}"/>'
 
 
-def prompt(t, y, cmd):
-    return text(48, y, "$", t["ok"], weight=700) + text(48 + width("$ "), y, cmd, t["ink"])
+def lang(t, x, y, name, size):
+    dot = f'<circle cx="{x + size * 0.3:g}" cy="{y - size * 0.36:g}" r="{size * 0.3:g}" fill="{LANG.get(name, t["faint"])}"/>'
+    return dot + text(x + size * 0.95, y, name, t["sub"], size) if name else ""
 
 
-def langs_rows(t, d, y):
-    top = d["langs"][:5]
-    rest = sum(v for _, v in d["langs"][5:])
-    items = [(k, v, t["spec"][i]) for i, (k, v) in enumerate(top)] + ([("Other", rest, t["rest"])] if rest else [])
+def stars(t, xr, y, n, size):
+    if not n:
+        return ""
+    s = f"{n:,}"
+    ix = xr - width(s, size) - size * 0.9
+    return star(ix, y - size * 0.36, size * 1.05, t["sub"]) + text(xr, y, s, t["sub"], size, 700, "end")
+
+
+def picture(href, x, y, w, h):
+    if not href:
+        return ""
+    clip = f'<clipPath id="pic"><rect x="{x}" y="{y}" width="{w}" height="{h}" rx="8"/></clipPath>'
+    return clip + f'<image href="{href}" x="{x}" y="{y}" width="{w}" height="{h}" preserveAspectRatio="xMidYMid slice" clip-path="url(#pic)"/>'
+
+
+def featured_desk(t, p, key):
+    W, H, x, xr = 1200, 248, 408, 1164
+    body = frame(t, W, H - 16) + picture(preview(key), 16, 16, 356, 200)
+    body += text(x, 42.3, p["name"], t["ink"], 36, 700) + stars(t, xr, 37.9, p["stars"], 24)
+    for i, line in enumerate(wrap(p["desc"], 56, 3)):
+        body += text(x, 92 + i * 32, line, t["sub"], 22)
+    body += lang(t, x, 216, p["lang"], 20)
+    return svg(W, H, f'{p["name"]}: {p["desc"]}', body)
+
+
+def featured_mobile(t, p, key):
+    W, x, xr = 800, 32, 768
+    lines = wrap(p["desc"], 40, 3)
+    h = 580 + (len(lines) - 1) * 42 + 62 + 36
+    body = frame(t, W, h) + picture(preview(key), 16, 16, 768, 432)
+    body += text(x, 520, p["name"], t["ink"], 48, 700) + stars(t, xr, 518, p["stars"], 32)
+    for i, line in enumerate(lines):
+        body += text(x, 580 + i * 42, line, t["sub"], 30)
+    body += lang(t, x, h - 36, p["lang"], 28)
+    return svg(W, h + 16, f'{p["name"]}: {p["desc"]}', body)
+
+
+def more_desk(t, p, key):
+    W, H, x, xr = 1200, 132, 36, 1164
+    tail = stars(t, xr, 50, p["stars"], 22)
+    lr = xr - (width(f'{p["stars"]:,}', 22) + 52 if p["stars"] else 0)
+    lx = lr - width(p["lang"], 20) - 20 * 0.95
+    body = frame(t, W, H - 16) + text(x, 50, p["name"], t["ink"], 28, 700) + tail + lang(t, lx, 50, p["lang"], 20)
+    body += text(x, 88, wrap(p["desc"], 84, 1)[0], t["sub"], 22)
+    return svg(W, H, f'{p["name"]}: {p["desc"]}', body)
+
+
+def more_mobile(t, p, key):
+    W, x, xr = 800, 32, 768
+    lines = wrap(p["desc"], 40, 2)
+    h = 122 + (len(lines) - 1) * 42 + 58 + 36
+    body = frame(t, W, h) + text(x, 70, p["name"], t["ink"], 40, 700) + stars(t, xr, 68, p["stars"], 30)
+    for i, line in enumerate(lines):
+        body += text(x, 122 + i * 42, line, t["sub"], 30)
+    body += lang(t, x, h - 36, p["lang"], 28)
+    return svg(W, h + 16, f'{p["name"]}: {p["desc"]}', body)
+
+
+def prompt(t, x, y, cmd, size):
+    return text(x, y, "$", t["ok"], size, 700) + text(x + width("$ ", size), y, cmd, t["ink"], size)
+
+
+def lang_items(t, d):
+    top, rest = d["langs"][:5], sum(v for _, v in d["langs"][5:])
+    items = [(k, v, t["spec"][i]) for i, (k, v) in enumerate(top)] + ([("Other", rest, t["faint"])] if rest else [])
     total = sum(v for _, v, _ in items) or 1
-    span, x, bar, legend, lx = W - 96, 48.0, [], [], 48.0
-    for k, v, c in items:
-        w = span * v / total
-        bar.append(f'<rect x="{x:.1f}" y="{y}" width="{max(w - 3, 1):.1f}" height="14" rx="3" fill="{c}"/>')
-        x += w
-        label = f"{k} {v * 100 / total:.0f}%"
-        legend.append(f'<rect x="{lx:.1f}" y="{y + 38}" width="12" height="12" rx="3" fill="{c}"/>' + text(lx + 20, y + 49, label, t["sub"], 18))
-        lx += 20 + width(label, 18) + 32
-    clip = f'<clipPath id="grow"><rect x="48" y="{y}" width="{span}" height="14"><animate attributeName="width" values="0;0;{span}" keyTimes="0;.45;1" dur="2s" fill="freeze" calcMode="spline" keySplines="0 0 1 1;.2 .8 .2 1"/></rect></clipPath>'
-    return clip + f'<g clip-path="url(#grow)">{"".join(bar)}</g>' + "".join(legend)
+    return [(f"{k} {v * 100 / total:.0f}%", v / total, c) for k, v, c in items]
 
 
-def stats_row(t, d, y):
-    parts = [("stars", d["stars"]), ("repos", d["repos"]), ("contributions", d["contributions"]), ("followers", d["followers"])]
-    out, x = [], 48.0
-    for i, (label, n) in enumerate(p for p in parts if p[1] is not None):
-        num = f"{n:,}"
-        out.append(text(x, y, num, t["spec"][i], weight=700) + text(x + width(num + " "), y, label, t["sub"]))
-        x += width(f"{num} {label}") + 44
-    return "".join(out)
+def bar(x, y, w, h, items):
+    out, cx = [], x
+    for i, (_, share, c) in enumerate(items):
+        sw = w * share - (4 if i < len(items) - 1 else 0)
+        out.append(f'<rect x="{cx:.2f}" y="{y}" width="{max(sw, 2):.2f}" height="{h}" rx="{h / 4:g}" fill="{c}"/>')
+        cx += w * share
+    grow = f'<animate attributeName="width" values="0;{w}" dur="1.4s" fill="freeze" calcMode="spline" keySplines=".2 .8 .2 1"/>'
+    clip = f'<clipPath id="grow"><rect x="{x}" y="{y}" width="{w}" height="{h}">{grow}</rect></clipPath>'
+    return clip + f'<g clip-path="url(#grow)">{"".join(out)}</g>'
 
 
-def hue(t, name):
-    return t["spec"][sum(map(ord, name)) % 6]
+def stat(t, x, y, i, label, n, size):
+    num = f"{n:,}"
+    return text(x, y, num, t["spec"][i], size, 700) + text(x + width(num + " ", size), y, label, t["sub"], size)
 
 
-def log_rows(t, d, y):
-    out, col = [], max((len(n) for n, _, _ in d["log"]), default=0) + 3
-    room = int((W - 96) / width("x")) - col - 8
+def when(date):
+    return datetime.strptime(date, "%Y-%m-%dT%H:%M:%SZ").strftime("%b %d")
+
+
+def chrome(t, W, H, bh, size):
+    dots = "".join(f'<circle cx="{bh / 2 + i * bh * 0.46:g}" cy="{bh / 2:g}" r="{bh / 8:g}" fill="{c}"/>' for i, c in enumerate(t["spec"][::2]))
+    head = f'<path d="M.5 {bh}V14.5a14 14 0 0 1 14-14h{W - 29}a14 14 0 0 1 14 14V{bh}z" fill="{t["fill"]}"/>'
+    rule = f'<line x1=".5" y1="{bh}" x2="{W - .5}" y2="{bh}" stroke="{t["line"]}"/>'
+    return frame(t, W, H) + head + rule + dots + text(W / 2, bh / 2 + size * 0.36, "cj@github ~", t["faint"], size, 400, "middle")
+
+
+def tail(t, x, W, y, s, stamp):
+    cx = x + width("$ ", s) + s * 0.045
+    blink = '<animate attributeName="opacity" values="1;1;0;0" keyTimes="0;.5;.5;1" dur="1.2s" repeatCount="indefinite"/>'
+    cur = f'<rect x="{cx:g}" y="{y - s * 0.73:g}" width="{s * 0.51:g}" height="{s * 0.73:g}" fill="{t["sub"]}">{blink}</rect>'
+    return prompt(t, x, y, "", s) + cur + text(W - x, y, stamp, t["faint"], round(s * 0.7), 400, "end")
+
+
+def term_desk(t, d, stamp):
+    W, H, x, s = 1200, 520, 36, 22
+    b = chrome(t, W, H, 48, 16) + prompt(t, x, 100, "gh stats", s)
+    cx = x
+    for i, (label, n) in enumerate(p for p in d["stats"] if p[1] is not None):
+        b += stat(t, cx, 136, i, label, n, s)
+        cx += width(f"{n:,} {label}", s) + 48
+    items = lang_items(t, d)
+    b += prompt(t, x, 192, "langs", s) + bar(x, 212, W - 2 * x, 14, items)
+    lx = x
+    for label, _, c in items:
+        b += f'<rect x="{lx:g}" y="{250}" width="14" height="14" rx="3" fill="{c}"/>'
+        b += text(lx + 22, 263, label, t["sub"], 18)
+        lx += 22 + width(label, 18) + 36
+    b += prompt(t, x, 318, "git log -3", s)
+    col = max((len(n) for n, _, _ in d["log"]), default=0) + 2
+    room = int((W - 2 * x) / width("x", s)) - col - 8
     for i, (name, date, msg) in enumerate(d["log"]):
-        when = datetime.strptime(date, "%Y-%m-%dT%H:%M:%SZ").strftime("%b %d")
-        msg = msg if len(msg) <= room else msg[: room - 1].rstrip() + "…"
-        row = y + i * 36
-        out.append(text(48, row, name, hue(t, name), weight=700) + text(48 + width("x" * col), row, when, t["sub"]) + text(48 + width("x" * (col + 8)), row, msg, t["ink"]))
-    return out
+        y = 354 + i * 36
+        msg = wrap(msg, room, 1)[0]
+        b += text(x, y, name, t["spec"][(i * 2) % 6], s, 700) + text(x + width("x" * col, s), y, when(date), t["faint"], s)
+        b += text(x + width("x" * (col + 8), s), y, msg, t["ink"], s)
+    return svg(W, H, "Stats, languages and latest commits", b + tail(t, x, W, 482, s, stamp))
 
 
-def group(i, body):
-    return f'<g class="l" style="animation-delay:{i * 0.22:.2f}s">{body}</g>'
-
-
-STYLE = "<style>.l{animation:in .5s ease-out both}@keyframes in{from{opacity:0;transform:translateY(6px)}}.c{animation:blink 1.1s steps(1) infinite}@keyframes blink{50%{opacity:0}}</style>"
-
-
-def card(t, d, stamp):
-    rows = [
-        prompt(t, 100, "whoami") + text(48, 136, "cj · rust, go and typescript · san francisco", t["sub"]),
-        prompt(t, 192, "stats") + stats_row(t, d, 228),
-        prompt(t, 284, "langs --by-bytes") + langs_rows(t, d, 302),
-        prompt(t, 407, "git log -3 --oneline") + "".join(log_rows(t, d, 443)),
-    ]
-    h = 610
-    dots = "".join(f'<circle cx="{28 + i * 22}" cy="24" r="6" fill="{c}"/>' for i, c in enumerate(SPECTRUM[::2]))
-    head = (
-        f'<rect x=".5" y=".5" width="{W - 1}" height="{h - 1}" rx="14" fill="{t["bg"]}" stroke="{t["line"]}"/>'
-        f'<path d="M.5 48V14.5a14 14 0 0 1 14-14h{W - 29}a14 14 0 0 1 14 14V48z" fill="{t["bar"]}"/>'
-        f'<line x1="0" y1="48" x2="{W}" y2="48" stroke="{t["line"]}"/>{dots}'
-        + text(W / 2 - width("cj@github: ~", 16) / 2, 30, "cj@github: ~", t["sub"], 16)
-    )
-    tail = prompt(t, 571, "") + f'<rect class="c" x="{48 + width("$ ")}" y="553" width="12" height="22" fill="{t["ink"]}"/>'
-    tail += text(W - 48 - width(stamp, 14), 571, stamp, t["sub"], 14)
-    body = "".join(group(i, r) for i, r in enumerate(rows + [tail]))
-    return (
-        f'<svg xmlns="http://www.w3.org/2000/svg" width="{W}" height="{h}" viewBox="0 0 {W} {h}" role="img" aria-label="cj on GitHub: stats, languages and latest commits">'
-        f"{STYLE}{head}{body}</svg>\n"
-    )
-
-
-def tile(t, repo, c, side):
-    name, desc, lang, stars = repo
-    w, h, gap = 600, 184, 8
-    x0, cw, ch = (gap if side == "r" else 0), w - gap, h - 2 * gap
-    body = "".join(text(x0 + 28, 90 + i * 26, line, t["sub"], 18) for i, line in enumerate(wrap(desc, 48)))
-    star = f"★ {stars}" if stars else ""
-    return (
-        f'<svg xmlns="http://www.w3.org/2000/svg" width="{w}" height="{h}" viewBox="0 0 {w} {h}" role="img" aria-label="{escape(name)}: {escape(desc)}">'
-        f'<clipPath id="r"><rect x="{x0}" width="{cw}" height="{ch}" rx="12"/></clipPath><g clip-path="url(#r)">'
-        f'<rect x="{x0}" width="{cw}" height="{ch}" fill="{t["bg"]}"/><rect x="{x0}" width="5" height="{ch}" fill="{c}"/></g>'
-        f'<rect x="{x0 + .5}" y=".5" width="{cw - 1}" height="{ch - 1}" rx="12" fill="none" stroke="{t["line"]}"/>'
-        + text(x0 + 28, 52, name, t["ink"], 24, 700) + text(x0 + cw - 28 - width(star, 18), 50, star, c, 18, 700) + body
-        + f'<circle cx="{x0 + 34}" cy="{ch - 29}" r="6" fill="{c}"/>' + text(x0 + 48, ch - 23, lang, t["sub"], 16)
-        + "</svg>\n"
-    )
-
-
-def wrap(s, n, lines=2):
-    out, cur = [], ""
-    for w in s.split():
-        if len(cur) + len(w) + 1 > n:
-            out.append(cur)
-            cur = w
-        else:
-            cur = f"{cur} {w}".strip()
-    out.append(cur)
-    if len(out) > lines:
-        out = out[:lines]
-        words = out[-1].split()
-        while len(" ".join(words)) + 1 > n:
-            words.pop()
-        out[-1] = " ".join(words).rstrip(" ,.") + "…"
-    return out
+def term_mobile(t, d, stamp):
+    W, H, x, s = 800, 884, 32, 28
+    b = chrome(t, W, H, 56, 20) + prompt(t, x, 124, "gh stats", s)
+    for i, (label, n) in enumerate(p for p in d["stats"] if p[1] is not None):
+        b += stat(t, x + (i % 2) * 384, 172 + (i // 2) * 46, i, label, n, s)
+    items = lang_items(t, d)
+    b += prompt(t, x, 290, "langs", s) + bar(x, 312, W - 2 * x, 18, items)
+    for i, (label, _, c) in enumerate(items):
+        lx, ly = x + (i % 3) * 248, 372 + (i // 3) * 42
+        b += f'<rect x="{lx}" y="{ly - 16}" width="18" height="18" rx="4" fill="{c}"/>' + text(lx + 28, ly, label, t["sub"], 22)
+    b += prompt(t, x, 486, "git log -3", s)
+    for i, (name, date, msg) in enumerate(d["log"]):
+        y = 534 + i * 100
+        b += text(x, y, name, t["spec"][(i * 2) % 6], s, 700) + text(W - x, y, when(date), t["faint"], s, 400, "end")
+        b += text(x, y + 40, wrap(msg, 43, 1)[0], t["ink"], s)
+    return svg(W, H, "Stats, languages and latest commits", b + tail(t, x, W, 846, s, stamp))
 
 
 if __name__ == "__main__":
     out = Path(sys.argv[1] if len(sys.argv) > 1 else "dist")
     out.mkdir(parents=True, exist_ok=True)
     data = gather()
-    stamp = "updated " + datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
+    stamp = "updated " + datetime.now(timezone.utc).strftime("%b %d, %H:%M UTC")
+    cards = [(k, project(k), featured_desk, featured_mobile) for k in FEATURED] + [(k, project(k), more_desk, more_mobile) for k in MORE]
     for name, t in THEMES.items():
-        (out / f"now-{name}.svg").write_text(card(t, data, stamp))
-        for repo in data["projects"]:
-            for side in "lr":
-                (out / f"repo-{repo[0]}-{name}-{side}.svg").write_text(tile(t, repo, hue(t, repo[0]), side))
+        (out / f"now-{name}.svg").write_text(term_desk(t, data, stamp))
+        (out / f"now-{name}-mobile.svg").write_text(term_mobile(t, data, stamp))
+        for key, p, desk, mobile in cards:
+            (out / f"{key}-{name}.svg").write_text(desk(t, p, key))
+            (out / f"{key}-{name}-mobile.svg").write_text(mobile(t, p, key))
