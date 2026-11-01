@@ -20,7 +20,6 @@ def card(key):
 
 if __name__ == "__main__":
     parts = [
-        picture("assets/banner", "cj. I build tools for the terminal, the desktop and Spotify."),
         "\n".join(card(k) for k in FEATURED + MORE),
         picture(f"{RAW}/now", "Stats, languages and latest commits, refreshed every 6 hours"),
     ]
