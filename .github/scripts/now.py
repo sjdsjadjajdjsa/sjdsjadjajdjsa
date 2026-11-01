@@ -97,6 +97,10 @@ def stats_row(t, d, y):
     return "".join(out)
 
 
+def hue(t, name):
+    return t["spec"][sum(map(ord, name)) % 6]
+
+
 def log_rows(t, d, y):
     out, col = [], max((len(n) for n, _, _ in d["log"]), default=0) + 3
     room = int((W - 96) / width("x")) - col - 8
@@ -104,7 +108,7 @@ def log_rows(t, d, y):
         when = datetime.strptime(date, "%Y-%m-%dT%H:%M:%SZ").strftime("%b %d")
         msg = msg if len(msg) <= room else msg[: room - 1].rstrip() + "…"
         row = y + i * 36
-        out.append(text(48, row, name, t["spec"][(i * 2) % 6], weight=700) + text(48 + width("x" * col), row, when, t["sub"]) + text(48 + width("x" * (col + 8)), row, msg, t["ink"]))
+        out.append(text(48, row, name, hue(t, name), weight=700) + text(48 + width("x" * col), row, when, t["sub"]) + text(48 + width("x" * (col + 8)), row, msg, t["ink"]))
     return out
 
 
@@ -119,8 +123,8 @@ def card(t, d, stamp):
     rows = [
         prompt(t, 100, "whoami") + text(48, 136, "cj · rust, go and typescript · san francisco", t["sub"]),
         prompt(t, 192, "stats") + stats_row(t, d, 228),
-        prompt(t, 284, "langs --by-bytes") + langs_rows(t, d, 306),
-        prompt(t, 404, "git log -3 --oneline") + "".join(log_rows(t, d, 440)),
+        prompt(t, 284, "langs --by-bytes") + langs_rows(t, d, 302),
+        prompt(t, 407, "git log -3 --oneline") + "".join(log_rows(t, d, 443)),
     ]
     h = 610
     dots = "".join(f'<circle cx="{28 + i * 22}" cy="24" r="6" fill="{c}"/>' for i, c in enumerate(SPECTRUM[::2]))
@@ -130,8 +134,8 @@ def card(t, d, stamp):
         f'<line x1="0" y1="48" x2="{W}" y2="48" stroke="{t["line"]}"/>{dots}'
         + text(W / 2 - width("cj@github: ~", 16) / 2, 30, "cj@github: ~", t["sub"], 16)
     )
-    tail = prompt(t, 572, "") + f'<rect class="c" x="{48 + width("$ ")}" y="554" width="12" height="22" fill="{t["ink"]}"/>'
-    tail += text(W - 48 - width(stamp, 14), 572, stamp, t["sub"], 14)
+    tail = prompt(t, 571, "") + f'<rect class="c" x="{48 + width("$ ")}" y="553" width="12" height="22" fill="{t["ink"]}"/>'
+    tail += text(W - 48 - width(stamp, 14), 571, stamp, t["sub"], 14)
     body = "".join(group(i, r) for i, r in enumerate(rows + [tail]))
     return (
         f'<svg xmlns="http://www.w3.org/2000/svg" width="{W}" height="{h}" viewBox="0 0 {W} {h}" role="img" aria-label="cj on GitHub: stats, languages and latest commits">'
@@ -139,18 +143,19 @@ def card(t, d, stamp):
     )
 
 
-def tile(t, repo, c):
+def tile(t, repo, c, side):
     name, desc, lang, stars = repo
-    w, h = 590, 164
-    body = "".join(text(28, 92 + i * 24, line, t["sub"], 16) for i, line in enumerate(wrap(desc, 52)))
+    w, h, gap = 600, 184, 8
+    x0, cw, ch = (gap if side == "r" else 0), w - gap, h - 2 * gap
+    body = "".join(text(x0 + 28, 90 + i * 26, line, t["sub"], 18) for i, line in enumerate(wrap(desc, 48)))
     star = f"★ {stars}" if stars else ""
     return (
         f'<svg xmlns="http://www.w3.org/2000/svg" width="{w}" height="{h}" viewBox="0 0 {w} {h}" role="img" aria-label="{escape(name)}: {escape(desc)}">'
-        f'<clipPath id="r"><rect width="{w}" height="{h}" rx="12"/></clipPath><g clip-path="url(#r)">'
-        f'<rect width="{w}" height="{h}" fill="{t["bg"]}"/><rect width="5" height="{h}" fill="{c}"/></g>'
-        f'<rect x=".5" y=".5" width="{w - 1}" height="{h - 1}" rx="12" fill="none" stroke="{t["line"]}"/>'
-        + text(28, 50, name, t["ink"], 22, 700) + text(w - 28 - width(star, 16), 48, star, c, 16, 700) + body
-        + f'<circle cx="34" cy="{h - 26}" r="6" fill="{c}"/>' + text(48, h - 21, lang, t["sub"], 14)
+        f'<clipPath id="r"><rect x="{x0}" width="{cw}" height="{ch}" rx="12"/></clipPath><g clip-path="url(#r)">'
+        f'<rect x="{x0}" width="{cw}" height="{ch}" fill="{t["bg"]}"/><rect x="{x0}" width="5" height="{ch}" fill="{c}"/></g>'
+        f'<rect x="{x0 + .5}" y=".5" width="{cw - 1}" height="{ch - 1}" rx="12" fill="none" stroke="{t["line"]}"/>'
+        + text(x0 + 28, 52, name, t["ink"], 24, 700) + text(x0 + cw - 28 - width(star, 18), 50, star, c, 18, 700) + body
+        + f'<circle cx="{x0 + 34}" cy="{ch - 29}" r="6" fill="{c}"/>' + text(x0 + 48, ch - 23, lang, t["sub"], 16)
         + "</svg>\n"
     )
 
@@ -166,7 +171,10 @@ def wrap(s, n, lines=2):
     out.append(cur)
     if len(out) > lines:
         out = out[:lines]
-        out[-1] = out[-1][: n - 1].rstrip(" ,.") + "…"
+        words = out[-1].split()
+        while len(" ".join(words)) + 1 > n:
+            words.pop()
+        out[-1] = " ".join(words).rstrip(" ,.") + "…"
     return out
 
 
@@ -178,5 +186,5 @@ if __name__ == "__main__":
     for name, t in THEMES.items():
         (out / f"now-{name}.svg").write_text(card(t, data, stamp))
         for repo in data["projects"]:
-            c = t["spec"][sum(map(ord, repo[0])) % 6]
-            (out / f"repo-{repo[0]}-{name}.svg").write_text(tile(t, repo, c))
+            for side in "lr":
+                (out / f"repo-{repo[0]}-{name}-{side}.svg").write_text(tile(t, repo, hue(t, repo[0]), side))

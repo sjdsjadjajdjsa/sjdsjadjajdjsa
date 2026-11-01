@@ -9,7 +9,7 @@ THEMES = {
 
 
 def rays():
-    ex, ey = 905, 158
+    ex, ey = 915, 158
     out = []
     for i, c in enumerate(SPECTRUM):
         y = 62 + i * 40
@@ -36,10 +36,10 @@ def banner(t):
         f'<filter id="glow" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="6"/></filter>'
         f'<clipPath id="c"><rect width="1200" height="320" rx="16"/></clipPath></defs>'
         f'<g clip-path="url(#c)"><rect width="1200" height="320" fill="url(#b)"/><rect width="1200" height="320" fill="url(#p)"/>'
-        f'<line x1="560" y1="214" x2="819" y2="150" stroke="{t["beam"]}" stroke-width="4" stroke-linecap="round" opacity=".9"/>'
-        f'<line x1="560" y1="214" x2="819" y2="150" stroke="{t["beam"]}" stroke-width="2" stroke-dasharray="6 40" stroke-opacity=".9">'
+        f'<line x1="600" y1="204" x2="819" y2="150" stroke="{t["beam"]}" stroke-width="4" stroke-linecap="round" opacity=".9"/>'
+        f'<line x1="600" y1="204" x2="819" y2="150" stroke="{t["beam"]}" stroke-width="2" stroke-dasharray="6 40" stroke-opacity=".9">'
         f'<animate attributeName="stroke-dashoffset" from="46" to="0" dur="1.2s" repeatCount="indefinite"/></line>'
-        f'<polygon points="819,148 819,152 905,161 905,155" fill="{t["beam"]}" opacity=".45"/>'
+        f'<polygon points="819,148 819,152 915,161 915,155" fill="{t["beam"]}" opacity=".45"/>'
         f'<g filter="url(#glow)" opacity=".7">{rays()}</g>{rays()}'
         f'<polygon points="865,62 775,232 955,232" fill="{t["glass"]}" fill-opacity=".06" stroke="{t["glass"]}" stroke-opacity=".75" stroke-width="2" stroke-linejoin="round"/>'
         f'<polygon points="865,92 802,214 928,214" fill="none" stroke="{t["glass"]}" stroke-opacity=".12" stroke-width="1"/></g>'
