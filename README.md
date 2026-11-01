@@ -1,17 +1,5 @@
 <p align="center">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="assets/banner-dark.svg">
-    <source media="(prefers-color-scheme: light)" srcset="assets/banner-light.svg">
-    <img src="assets/banner-dark.svg" alt="cj. I build tools for the terminal, the desktop and Spotify." width="100%">
-  </picture>
-</p>
-
-<p align="center">
-  <img src="https://img.shields.io/badge/Go-c69bff?style=flat-square&logo=go&logoColor=white" alt="Go">
-  <img src="https://img.shields.io/badge/Rust-ffa25f?style=flat-square&logo=rust&logoColor=white" alt="Rust">
-  <img src="https://img.shields.io/badge/TypeScript-6fd3ff?style=flat-square&logo=typescript&logoColor=white" alt="TypeScript">
-  <img src="https://img.shields.io/badge/Linux-7ee2a8?style=flat-square&logo=linux&logoColor=black" alt="Linux">
-  <img src="https://img.shields.io/badge/San%20Francisco-f9e27d?style=flat-square" alt="San Francisco">
+  <picture><source media="(prefers-color-scheme: dark)" srcset="assets/banner-dark.svg"><source media="(prefers-color-scheme: light)" srcset="assets/banner-light.svg"><img src="assets/banner-dark.svg" alt="cj. I build tools for the terminal, the desktop and Spotify." width="100%"></picture>
 </p>
 
 ## What I'm building
@@ -39,12 +27,15 @@
   </tr>
 </table>
 
-Also: [ttyfy](https://github.com/sjdsjadjajdjsa/ttyfy-theme), a terminal-style theme for Spotify.
+### More
 
-## Activity
+<p>
+  <a href="https://github.com/sjdsjadjajdjsa/tonal"><picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/sjdsjadjajdjsa/sjdsjadjajdjsa/output/repo-tonal-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/sjdsjadjajdjsa/sjdsjadjajdjsa/output/repo-tonal-light.svg"><img src="https://raw.githubusercontent.com/sjdsjadjajdjsa/sjdsjadjajdjsa/output/repo-tonal-dark.svg" alt="tonal" width="49%"></picture></a>
+  <a href="https://github.com/sjdsjadjajdjsa/rhythia-is-trash"><picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/sjdsjadjajdjsa/sjdsjadjajdjsa/output/repo-rhythia-is-trash-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/sjdsjadjajdjsa/sjdsjadjajdjsa/output/repo-rhythia-is-trash-light.svg"><img src="https://raw.githubusercontent.com/sjdsjadjajdjsa/sjdsjadjajdjsa/output/repo-rhythia-is-trash-dark.svg" alt="rhythia-is-trash" width="49%"></picture></a>
+  <a href="https://github.com/sjdsjadjajdjsa/pg3d-rewrite"><picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/sjdsjadjajdjsa/sjdsjadjajdjsa/output/repo-pg3d-rewrite-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/sjdsjadjajdjsa/sjdsjadjajdjsa/output/repo-pg3d-rewrite-light.svg"><img src="https://raw.githubusercontent.com/sjdsjadjajdjsa/sjdsjadjajdjsa/output/repo-pg3d-rewrite-dark.svg" alt="pg3d-rewrite" width="49%"></picture></a>
+  <a href="https://github.com/sjdsjadjajdjsa/ttyfy-theme"><picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/sjdsjadjajdjsa/sjdsjadjajdjsa/output/repo-ttyfy-theme-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/sjdsjadjajdjsa/sjdsjadjajdjsa/output/repo-ttyfy-theme-light.svg"><img src="https://raw.githubusercontent.com/sjdsjadjajdjsa/sjdsjadjajdjsa/output/repo-ttyfy-theme-dark.svg" alt="ttyfy-theme" width="49%"></picture></a>
+</p>
 
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/sjdsjadjajdjsa/sjdsjadjajdjsa/output/github-snake-dark.svg">
-  <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/sjdsjadjajdjsa/sjdsjadjajdjsa/output/github-snake.svg">
-  <img alt="Contribution graph with a snake eating the commits" src="https://raw.githubusercontent.com/sjdsjadjajdjsa/sjdsjadjajdjsa/output/github-snake.svg">
-</picture>
+## Right now
+
+<picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/sjdsjadjajdjsa/sjdsjadjajdjsa/output/now-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/sjdsjadjajdjsa/sjdsjadjajdjsa/output/now-light.svg"><img src="https://raw.githubusercontent.com/sjdsjadjajdjsa/sjdsjadjajdjsa/output/now-dark.svg" alt="Stars, languages and latest commits, refreshed every few hours" width="100%"></picture>
