@@ -4,14 +4,13 @@ import sys
 import urllib.request
 from pathlib import Path
 
-from kit import THEMES, svg, text, width, wrap
+from kit import THEMES, svg, text, width
 
 USER = os.environ.get("PROFILE_USER", "sjdsjadjajdjsa")
 TOKEN = os.environ.get("GITHUB_TOKEN", "")
 API = "https://api.github.com"
-QUOTES = str.maketrans("‘’“”", "''\"\"")
 CURSOR = ".cur{animation:blink 1.1s steps(1) infinite}@keyframes blink{50%{opacity:0}}@media (prefers-reduced-motion:reduce){.cur{animation:none}}"
-ALT = "cj's terminal: who I am, GitHub stats and languages, refreshed every 6 hours"
+ALT = "cj's terminal: name, location, GitHub stats and languages, refreshed every 6 hours"
 
 
 def call(path, body=None):
@@ -41,7 +40,6 @@ def gather():
     return dict(
         name=user["name"] or USER,
         place=user["location"] or "",
-        bio=" ".join((user["bio"] or "").translate(QUOTES).split()),
         stats=[("stars", sum(r["stargazers_count"] for r in repos)), ("projects", len(repos)), ("contributions", contributions()), ("followers", user["followers"])],
         langs=sorted(langs.items(), key=lambda x: -x[1]),
     )
@@ -60,16 +58,11 @@ def cursor(t, x, y, size):
     return prompt(t, x, y, "", size) + f'<rect class="cur" x="{x + width("$ ", size):g}" y="{y - size * 0.86:g}" width="{w:g}" height="{h:g}" fill="{t["ink"]}"/>'
 
 
-def whoami(t, x, y, d, size, lines, step, bio, room):
+def whoami(t, x, y, d, size):
     out = text(x, y, d["name"], t["ink"], size, 700)
     if d["place"]:
         out += text(x + width(d["name"] + " ", size), y, "· " + d["place"], t["sub"], size)
-    if not d["bio"]:
-        return out, y
-    body, lh = wrap(d["bio"], int(room / width("m", bio)), lines), round(bio * 1.64)
-    for i, line in enumerate(body):
-        out += text(x, y + step + i * lh, line, t["sub"], bio)
-    return out, y + step + (len(body) - 1) * lh
+    return out
 
 
 def lang_items(t, d):
@@ -122,8 +115,7 @@ def stats(d):
 def term_desk(t, d):
     W, x, s, step, gap = 1200, 36, 22, 36, 60
     b = prompt(t, x, 100, "whoami", s)
-    who, y = whoami(t, x, 100 + step, d, s, 2, step, s, W - 2 * x)
-    y += gap
+    who, y = whoami(t, x, 100 + step, d, s), 100 + step + gap
     b += who + prompt(t, x, y, "gh stats", s)
     cx = x
     for i, (label, n) in enumerate(stats(d)):
@@ -143,8 +135,7 @@ def term_desk(t, d):
 def term_mobile(t, d):
     W, x, s, step, gap = 800, 32, 28, 46, 70
     b = prompt(t, x, 124, "whoami", s)
-    who, y = whoami(t, x, 124 + step, d, s, 3, step, 24, W - 2 * x)
-    y += gap
+    who, y = whoami(t, x, 124 + step, d, s), 124 + step + gap
     b += who + prompt(t, x, y, "gh stats", s)
     rows = stats(d)
     for i, (label, n) in enumerate(rows):

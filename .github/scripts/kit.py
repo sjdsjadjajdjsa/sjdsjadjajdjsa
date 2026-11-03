@@ -36,23 +36,6 @@ def text(x, y, s, fill, size, weight=400, anchor="start", extra=""):
     return f'<text x="{x:g}" y="{y:g}" font-size="{size}"{b}{a} fill="{fill}" xml:space="preserve"{extra}>{escape(s)}</text>'
 
 
-def wrap(s, n, lines):
-    out, cur = [], ""
-    for word in s.split():
-        if cur and len(cur) + 1 + len(word) > n:
-            out.append(cur)
-            cur = word
-        else:
-            cur = f"{cur} {word}" if cur else word
-    out.append(cur)
-    if len(out) > lines:
-        words = out[lines - 1].split()
-        while words and len(" ".join(words)) + 1 > n:
-            words.pop()
-        out = out[: lines - 1] + [" ".join(words).rstrip(" ,.;:") + "…"]
-    return out
-
-
 def svg(w, h, label, body, style=""):
     head = f'<svg xmlns="http://www.w3.org/2000/svg" width="{w}" height="{h}" viewBox="0 0 {w} {h}" role="img" aria-label="{escape(label)}">'
     return head + f"<style>{font_css()}{style}</style>" + body + "</svg>\n"
