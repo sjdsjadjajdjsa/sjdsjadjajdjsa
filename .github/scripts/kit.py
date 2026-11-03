@@ -53,13 +53,6 @@ def wrap(s, n, lines):
     return out
 
 
-STAR = "M0-7.6 2.2-2.4 7.8-2.2 3.4 1.3 4.9 6.7 0 3.6-4.9 6.7-3.4 1.3-7.8-2.2-2.2-2.4z"
-
-
-def star(x, y, size, fill):
-    return f'<path transform="translate({x:g} {y:g}) scale({size / 16:g})" d="{STAR}" fill="{fill}"/>'
-
-
 def svg(w, h, label, body, style=""):
     head = f'<svg xmlns="http://www.w3.org/2000/svg" width="{w}" height="{h}" viewBox="0 0 {w} {h}" role="img" aria-label="{escape(label)}">'
     return head + f"<style>{font_css()}{style}</style>" + body + "</svg>\n"
